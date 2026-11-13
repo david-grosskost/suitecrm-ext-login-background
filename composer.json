@@ -7,7 +7,7 @@
         "php": ">=8.4"
     },
     "require-dev": {
-        "david-grosskost/suitecrm-devkit": "^0.24"
+        "david-grosskost/suitecrm-devkit": "^0.25"
     },
     "autoload-dev": {
         "psr-4": {

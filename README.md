@@ -1,56 +1,40 @@
-# Modèle d'extension SuiteCRM
+# Fond de la page de connexion
 
-Point de départ de toute extension des projets SuiteCRM : on ne modifie jamais le code de
-SuiteCRM, on lui ajoute des extensions. Ce dépôt contient une extension d'exemple
-(`exemple`) qui passe toutes les vérifications : on la remplace par la sienne.
+Extension SuiteCRM 8 : une **image choisie dans l'administration** s'affiche en fond de
+la page de connexion, recadrée pour couvrir l'écran. Sans image, la page garde son fond
+habituel.
 
-## Créer une extension
+## Utilisation
 
-1. Sur GitHub, **Use this template → Create a new repository**, nommé
-   `suitecrm-ext-<slug>` (ex. `suitecrm-ext-siret-validation`).
-2. Le cloner, puis lancer `make` : le devkit s'installe (Docker suffit, pas besoin de PHP).
-3. Remplacer l'exemple :
-   - `extension.json` : `slug`, nom, description en mots métier, types ;
-   - `composer.json` : `name` en `…/suitecrm-ext-<slug>`, description ;
-   - `legacy/include/exemple/`, `tests/ExempleTest.php` : son code et ses tests.
-4. Vérifier, comme le fera la CI :
+**Administration → Page de connexion → Fond de la page de connexion** : choisir une image
+JPG, PNG ou WebP (5 Mo au plus ; une image large, 1920 × 1080 par exemple, rend le mieux),
+**Enregistrer**. Un aperçu montre l'image en place ; **Retirer l'image** rend le fond
+habituel. Réservé aux administrateurs.
+
+## Fonctionnement
+
+- L'image est gardée sur l'instance, dans `upload/login-background/` (volume persistant,
+  compris dans la sauvegarde de chaque nuit). Elle reste si l'extension est désactivée,
+  et revient à sa réactivation.
+- Le dossier `upload/` n'est jamais servi par le serveur web : un point d'entrée de
+  SuiteCRM, ouvert sans connexion puisque la page de connexion l'affiche avant,
+  sert **seulement** cette image : `legacy/index.php?entryPoint=loginBackground`
+  (« introuvable » s'il n'y en a pas).
+- Un **module Angular**, que SuiteCRM 8 charge au démarrage sans recompiler son front,
+  met cette image en fond de la page de connexion.
+
+## Pour les développeurs
+
+| Fichier | Rôle |
+|---|---|
+| `legacy/include/login-background/Storage.php` | l'image gardée : enregistrer, remplacer, retirer |
+| `legacy/include/login-background/Upload.php` | contrôle du fichier envoyé, par son contenu |
+| `legacy/include/login-background/Image.php` | réponse du point d'entrée (404, 304, 200) |
+| `legacy/include/login-background/Page.php` | la page d'administration |
+| `legacy/include/login-background/SettingsPage.php`, `Serve.php` | branchement dans SuiteCRM |
+| `legacy/Extension/…` | section de l'administration, point d'entrée, libellés |
+| `app/` → `public/` | le module Angular et sa version construite (`make front@build`) |
 
 ```bash
-make extension@validate   # format : manifeste, composer.json, place des fichiers
-make quality@lint         # style du code, scripts
-make quality@stan         # analyse statique (PHPStan, niveau max)
-make test@unit            # tests unitaires (PHPUnit)
+make extension@validate && make quality@lint && make quality@stan && make test@unit && make front@check
 ```
-
-5. Pousser une branche et ouvrir une pull request : un développeur la relit avant le merge.
-
-## Où mettre quoi
-
-| Dossier | Copié dans SuiteCRM | Pour |
-|---|---|---|
-| `legacy/Extension/…` | `public/legacy/custom/Extension/…` | hooks, champs, libellés : SuiteCRM les assemble au Quick Repair. Le slug figure dans chaque nom de fichier (ex. `legacy/Extension/application/Ext/LogicHooks/<slug>.php`) |
-| `legacy/include/<slug>/` | `public/legacy/custom/include/<slug>/` | les classes PHP appelées par les hooks : la logique, testée sans SuiteCRM |
-| `backend/`, `config/` | `extensions/<slug>/` | la couche SuiteCRM 8 (services Symfony), chargée automatiquement |
-| `database/seeders/` | — | ses données de démo, chargées par le seed des démos |
-| `tests/` | — | ses tests unitaires |
-
-`make extension@validate` refuse un fichier rangé ailleurs : deux extensions ne peuvent
-ainsi jamais écrire le même fichier.
-
-## Le manifeste `extension.json`
-
-| Clé | Contenu |
-|---|---|
-| `slug` | identifiant, en minuscules et tirets : le préfixe de tous ses fichiers |
-| `name` | nom, en français |
-| `description` | ce que fait l'extension, en mots métier (20 caractères au moins) |
-| `types` | parmi `logic-hook`, `fields`, `ui`, `scheduler`, `lang` |
-| `suitecrm` | versions de SuiteCRM compatibles, ex. `>=8.10 <9` |
-
-## Ce qui vient du devkit
-
-Les commandes `make`, la CI, les hooks Git, les règles de qualité et la signature des
-classes SuiteCRM pour PHPStan viennent de
-[suitecrm-devkit](https://github.com/david-grosskost/suitecrm-devkit), à la version de
-`composer.json`. Corriger une règle se fait dans le devkit, puis on monte sa version ici
-(`composer.json` et `.github/workflows/*.yml`, ensemble).

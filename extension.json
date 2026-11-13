@@ -1,7 +1,7 @@
 {
-    "slug": "exemple",
-    "name": "Exemple",
-    "description": "Extension d'exemple du modèle : à remplacer par ce que fait votre extension, en mots métier.",
-    "types": ["logic-hook"],
+    "slug": "login-background",
+    "name": "Fond de la page de connexion",
+    "description": "Une image choisie dans l'administration en fond de la page de connexion de SuiteCRM 8.",
+    "types": ["ui"],
     "suitecrm": ">=8.10 <9"
 }

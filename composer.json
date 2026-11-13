@@ -1,6 +1,6 @@
 {
-    "name": "david-grosskost/suitecrm-ext-exemple",
-    "description": "Extension d'exemple du modèle des extensions SuiteCRM.",
+    "name": "david-grosskost/suitecrm-ext-login-background",
+    "description": "Image de fond de la page de connexion de SuiteCRM 8, choisie dans l administration.",
     "type": "suitecrm-extension",
     "license": "proprietary",
     "require": {

@@ -1,0 +1,32 @@
+# Opens a pull request when a new version of suitecrm-devkit is released, every
+# week: composer.json and the workflows move together, in one pull request
+# (multi-ecosystem group), since they must name the same devkit version.
+# Prefix "build": the devkit is a development tool, no release of the
+# extension on its own.
+# No cooldown for the devkit: by default, Dependabot waits 3 days after a
+# release before proposing it; the workflows waited, composer.json did not
+# (a version from a Git repository has no release date), so they parted. The
+# devkit is our own: no reason to wait.
+version: 2
+
+multi-ecosystem-groups:
+  devkit:
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+
+updates:
+  - package-ecosystem: composer
+    directory: /
+    patterns: ["david-grosskost/suitecrm-devkit"]
+    multi-ecosystem-group: devkit
+    cooldown:
+      exclude: ["david-grosskost/suitecrm-devkit*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    patterns: ["david-grosskost/suitecrm-devkit*"]
+    multi-ecosystem-group: devkit
+    cooldown:
+      exclude: ["david-grosskost/suitecrm-devkit*"]

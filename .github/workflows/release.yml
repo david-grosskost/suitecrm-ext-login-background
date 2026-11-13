@@ -1,0 +1,22 @@
+# Release: release pull request (release-please), then the tag that the
+# projects install with Composer. No image: an extension is installed into
+# the image of the project that uses it.
+# Keep the version in step with suitecrm-devkit in composer.json.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    permissions:
+      contents: write
+      pull-requests: write
+      # Unused (no image), but asked by the devkit's image job: GitHub refuses
+      # a called workflow that asks for more than its caller grants.
+      packages: write
+    uses: david-grosskost/suitecrm-devkit/.github/workflows/release.yml@v0.20.0
+    with:
+      dockerfile: ""
+    secrets: inherit

@@ -1,0 +1,28 @@
+{
+    "name": "david-grosskost/suitecrm-ext-exemple",
+    "description": "Extension d'exemple du modèle des extensions SuiteCRM.",
+    "type": "suitecrm-extension",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.4"
+    },
+    "require-dev": {
+        "david-grosskost/suitecrm-devkit": "^0.20"
+    },
+    "autoload-dev": {
+        "classmap": ["legacy/include/"],
+        "psr-4": {
+            "SuiteCrmExt\\Exemple\\Tests\\": "tests/"
+        }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/david-grosskost/suitecrm-devkit",
+            "no-api": true
+        }
+    ],
+    "config": {
+        "sort-packages": true
+    }
+}

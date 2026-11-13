@@ -1,0 +1,13 @@
+# Static analysis of this extension (make quality@stan).
+# Shared settings and the signatures of the SuiteCRM classes come from
+# suitecrm-devkit: SuiteCRM itself is not installed here.
+includes:
+    - vendor/david-grosskost/suitecrm-devkit/config/phpstan.neon
+
+parameters:
+    paths:
+        - legacy
+        - tests
+    tmpDir: .tools/phpstan
+    scanFiles:
+        - vendor/david-grosskost/suitecrm-devkit/config/suitecrm.stub

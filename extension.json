@@ -1,0 +1,7 @@
+{
+    "slug": "exemple",
+    "name": "Exemple",
+    "description": "Extension d'exemple du modèle : à remplacer par ce que fait votre extension, en mots métier.",
+    "types": ["logic-hook"],
+    "suitecrm": ">=8.10 <9"
+}

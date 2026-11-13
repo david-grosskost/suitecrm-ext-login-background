@@ -1,0 +1,13 @@
+# CI: the checks of every SuiteCRM project and extension, from the devkit
+# (format of the extension, lint, PHPStan, unit tests, audit, commit messages).
+# Keep the version in step with suitecrm-devkit in composer.json.
+name: CI
+
+on:
+  pull_request:
+    # edited: a corrected pull request title is checked again.
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  checks:
+    uses: david-grosskost/suitecrm-devkit/.github/workflows/checks.yml@v0.20.0

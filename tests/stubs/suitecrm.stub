@@ -1,0 +1,58 @@
+<?php
+
+// Signatures of what the extension uses besides suitecrm-devkit's stub, for
+// PHPStan only (SuiteCRM and suitecrm-core are not installed here): legacy
+// functions and the legacy view (SuiteCRM 8.10.2, public/legacy/include), and
+// the seed runner of suitecrm-core (database/seeders/src).
+
+namespace {
+    class SugarView
+    {
+        /** @param array<mixed> $view_object_map */
+        public function __construct(?SugarBean $bean = null, array $view_object_map = [])
+        {
+        }
+
+        /** @param array<mixed> $view_object_map */
+        public function init(?SugarBean $bean = null, array $view_object_map = []): void
+        {
+        }
+
+        public function process(): void
+        {
+        }
+
+        public function display(): void
+        {
+        }
+    }
+
+    /** @return mixed The label, or the key when there is none */
+    function translate(string $string, string $mod = '', string $selectedValue = '')
+    {
+    }
+
+    /** @return array<string, mixed> */
+    function return_application_language(string $language): array
+    {
+    }
+
+    /** @return array<string, mixed> */
+    function return_module_language(string $language, string $module, bool $refresh = false): array
+    {
+    }
+
+    function is_admin(User $user): bool
+    {
+    }
+
+    function sugar_die(string $error_message, int $exit_code = 1): never
+    {
+    }
+
+    /** @param list<string> $params */
+    function getClassicModuleTitle(string $module, array $params, bool $show_create = false, string $index_url_override = '', string $create_url_override = ''): string
+    {
+    }
+}
+

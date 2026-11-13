@@ -6,8 +6,11 @@ includes:
 
 parameters:
     paths:
+        - config
         - legacy
         - tests
     tmpDir: .tools/phpstan
     scanFiles:
         - vendor/david-grosskost/suitecrm-devkit/config/suitecrm.stub
+        - tests/stubs/symfony.stub
+        - tests/stubs/suitecrm.stub

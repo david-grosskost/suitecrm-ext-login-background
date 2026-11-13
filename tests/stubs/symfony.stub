@@ -1,0 +1,17 @@
+<?php
+
+// Signatures of what config/extension.php uses, for PHPStan only (Symfony,
+// part of SuiteCRM 8, is not installed here).
+
+namespace Symfony\Component\DependencyInjection;
+
+class Container
+{
+    public function getParameter(string $name): mixed
+    {
+    }
+
+    public function setParameter(string $name, mixed $value): void
+    {
+    }
+}

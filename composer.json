@@ -1,18 +1,18 @@
 {
     "name": "david-grosskost/suitecrm-ext-login-background",
-    "description": "Image de fond de la page de connexion de SuiteCRM 8, choisie dans l administration.",
+    "description": "Image de fond de la page de connexion de SuiteCRM 8, choisie dans l'administration.",
     "type": "suitecrm-extension",
     "license": "proprietary",
     "require": {
         "php": ">=8.4"
     },
     "require-dev": {
-        "david-grosskost/suitecrm-devkit": "^0.20"
+        "david-grosskost/suitecrm-devkit": "^0.24"
     },
     "autoload-dev": {
-        "classmap": ["legacy/include/"],
         "psr-4": {
-            "SuiteCrmExt\\Exemple\\Tests\\": "tests/"
+            "SuiteCrmExt\\LoginBackground\\": "legacy/include/login-background/",
+            "SuiteCrmExt\\LoginBackground\\Tests\\": "tests/"
         }
     },
     "repositories": [

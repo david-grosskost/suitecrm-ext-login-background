@@ -7,7 +7,7 @@
         "php": ">=8.4"
     },
     "require-dev": {
-        "david-grosskost/suitecrm-devkit": "^0.20"
+        "david-grosskost/suitecrm-devkit": "^0.24"
     },
     "autoload-dev": {
         "classmap": ["legacy/include/"],

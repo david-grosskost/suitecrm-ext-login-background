@@ -10,4 +10,4 @@ on:
 
 jobs:
   checks:
-    uses: david-grosskost/suitecrm-devkit/.github/workflows/checks.yml@v0.20.0
+    uses: david-grosskost/suitecrm-devkit/.github/workflows/checks.yml@v0.24.0

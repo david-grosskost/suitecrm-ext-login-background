@@ -11,34 +11,24 @@ use SuiteCrmExt\LoginBackground\Storage;
 /** The admin page: what each button does, and what it shows. */
 final class PageTest extends TestCase
 {
-    private string $dir;
+    private MemorySettings $settings;
 
     private Storage $storage;
 
     protected function setUp(): void
     {
-        $this->dir = sys_get_temp_dir() . '/login-background-page-' . bin2hex(random_bytes(4));
-        $this->storage = new Storage($this->dir);
-    }
-
-    protected function tearDown(): void
-    {
-        foreach (glob($this->dir . '/*') ?: [] as $file) {
-            unlink($file);
-        }
-        if (is_dir($this->dir)) {
-            rmdir($this->dir);
-        }
+        $this->settings = new MemorySettings();
+        $this->storage = new Storage($this->settings);
     }
 
     /**
-     * @param array<string, mixed> $post
+     * @param array<string, string> $post
      *
      * @return list<array{string, string}>
      */
-    private function handle(array $post, mixed $file, bool $uploaded = true): array
+    private function handle(array $post, mixed $file, string|false $data = false): array
     {
-        return Page::handle($post, ['lb_image' => $file], $this->storage, static fn(): bool => $uploaded, ['LBL_LB_SAVED' => 'Image enregistrée']);
+        return Page::handle($post, ['lb_image' => $file], $data, $this->storage, ['LBL_LB_SAVED' => 'Image enregistrée']);
     }
 
     public function testDisplayDoesNothing(): void
@@ -49,7 +39,7 @@ final class PageTest extends TestCase
 
     public function testSaveKeepsTheImage(): void
     {
-        $messages = $this->handle(['lb_save' => '1'], ['error' => UPLOAD_ERR_OK, 'tmp_name' => Images::png()]);
+        $messages = $this->handle(['lb_save' => '1'], ['error' => UPLOAD_ERR_OK, 'tmp_name' => '/tmp/php1'], Images::png());
 
         self::assertSame([['notice', 'Image enregistrée']], $messages);
         self::assertSame('image/png', $this->storage->current()['type'] ?? null);
@@ -57,15 +47,15 @@ final class PageTest extends TestCase
 
     public function testSaveRefusesWhatIsNotAnImage(): void
     {
-        $messages = $this->handle(['lb_save' => '1'], ['error' => UPLOAD_ERR_OK, 'tmp_name' => Images::fake()]);
+        $messages = $this->handle(['lb_save' => '1'], ['error' => UPLOAD_ERR_OK, 'tmp_name' => '/tmp/php1'], Images::fake());
 
         self::assertSame([['error', 'LBL_LB_BAD_TYPE']], $messages);
         self::assertNull($this->storage->current());
     }
 
-    public function testSaveRefusesAFileNotJustSent(): void
+    public function testSaveRefusesAFileSuiteCrmRefused(): void
     {
-        $messages = $this->handle(['lb_save' => '1'], ['error' => UPLOAD_ERR_OK, 'tmp_name' => Images::png()], false);
+        $messages = $this->handle(['lb_save' => '1'], ['error' => UPLOAD_ERR_OK, 'tmp_name' => '/tmp/php1'], false);
 
         self::assertSame([['error', 'LBL_LB_UPLOAD_FAILED']], $messages);
         self::assertNull($this->storage->current());
@@ -94,7 +84,7 @@ final class PageTest extends TestCase
 
         $html = Page::html($this->storage->current(), [['error', '<b>']], []);
 
-        self::assertStringContainsString('index.php?entryPoint=loginBackground&amp;v=', $html);
+        self::assertStringContainsString('index.php?entryPoint=loginBackground&amp;v=' . ($this->storage->current()['version'] ?? ''), $html);
         self::assertStringContainsString('name="lb_remove"', $html);
         self::assertStringContainsString('&lt;b&gt;', $html);
     }

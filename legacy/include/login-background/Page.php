@@ -38,12 +38,12 @@ final class Page
      *
      * @param array<array-key, mixed> $post
      * @param array<array-key, mixed> $files
-     * @param callable(string): bool $isUpload Whether a path is a file just sent (is_uploaded_file)
+     * @param string|false $data Content of the file sent, as SuiteCRM's UploadFile read it (false: refused or none)
      * @param array<array-key, mixed> $labels
      *
      * @return list<array{string, string}> Messages (type, text)
      */
-    public static function handle(array $post, array $files, Storage $storage, callable $isUpload, array $labels): array
+    public static function handle(array $post, array $files, string|false $data, Storage $storage, array $labels): array
     {
         if (isset($post['lb_remove'])) {
             $storage->remove();
@@ -54,16 +54,14 @@ final class Page
             return [];
         }
 
-        $file = $files['lb_image'] ?? null;
-        $checked = Upload::check($file);
+        $checked = Upload::check($files['lb_image'] ?? null, $data);
         if (isset($checked['error'])) {
             return [['error', self::label($labels, $checked['error'])]];
         }
-        $path = is_array($file) && is_string($file['tmp_name'] ?? null) ? $file['tmp_name'] : '';
-        if (!$isUpload($path)) {
+        if ($data === false) {
             return [['error', self::label($labels, 'LBL_LB_UPLOAD_FAILED')]];
         }
-        $storage->save($path, $checked['type']);
+        $storage->save($data, $checked['type']);
 
         return [['notice', self::label($labels, 'LBL_LB_SAVED')]];
     }
@@ -72,57 +70,72 @@ final class Page
      * The form, in SuiteCRM's legacy styles (edit view, buttons), with a
      * preview of the image in use.
      *
-     * @param array{path: string, type: string}|null $current
+     * @param array{type: string, version: string, data: string}|null $current
      * @param list<array{string, string}> $messages
      * @param array<array-key, mixed> $labels
      */
     public static function html(?array $current, array $messages, array $labels): string
     {
-        $e = static fn(string $text): string => htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
-        $l = static fn(string $key): string => $e(self::label($labels, $key));
-
         $html = '';
         foreach ($messages as [$type, $text]) {
             $class = $type === 'error' ? 'error' : 'msg';
-            $html .= "<p class=\"{$class}\">{$e($text)}</p>\n";
+            $html .= "<p class=\"{$class}\">" . self::escape($text) . "</p>\n";
         }
 
         $action = self::ACTION;
         $accept = implode(',', array_keys(Storage::TYPES));
         $max = Storage::MAX_BYTES;
+        // Texts escaped beforehand, not by closures in the heredoc: the scanner
+        // of the Module Loader refuses the calls of a variable ($l()).
         if ($current === null) {
-            $preview = "<em>{$l('LBL_LB_NONE')}</em>";
+            $preview = '<em>' . self::text($labels, 'LBL_LB_NONE') . '</em>';
             $remove = '';
         } else {
-            // The modification time in the address: a new image is not taken from the cache.
-            $version = (string) (filemtime($current['path']) ?: 0);
+            // The version of the image in the address: a new one is not taken from the cache.
+            $version = self::escape($current['version']);
             $preview = "<img src=\"index.php?entryPoint=loginBackground&amp;v={$version}\" alt=\"\" style=\"max-width: 480px; max-height: 270px; border: 1px solid #ccc;\">";
-            $remove = "<input type=\"submit\" class=\"button\" name=\"lb_remove\" value=\"{$l('LBL_LB_REMOVE')}\">";
+            $remove = '<input type="submit" class="button" name="lb_remove" value="' . self::text($labels, 'LBL_LB_REMOVE') . '">';
         }
+        $intro = self::text($labels, 'LBL_LB_PAGE_INTRO');
+        $currentLabel = self::text($labels, 'LBL_LB_CURRENT');
+        $imageLabel = self::text($labels, 'LBL_LB_IMAGE');
+        $help = self::text($labels, 'LBL_LB_IMAGE_HELP');
+        $saveLabel = self::text($labels, 'LBL_LB_SAVE');
 
         return $html . <<<HTML
-            <p>{$l('LBL_LB_PAGE_INTRO')}</p>
+            <p>{$intro}</p>
             <form method="post" enctype="multipart/form-data" action="index.php?module=Administration&amp;action={$action}">
                 <input type="hidden" name="module" value="Administration">
                 <input type="hidden" name="action" value="{$action}">
                 <input type="hidden" name="MAX_FILE_SIZE" value="{$max}">
                 <table class="edit view" width="100%" cellspacing="1" cellpadding="0" border="0">
                     <tr>
-                        <td scope="row" width="25%">{$l('LBL_LB_CURRENT')}</td>
+                        <td scope="row" width="25%">{$currentLabel}</td>
                         <td>{$preview}</td>
                     </tr>
                     <tr>
-                        <td scope="row"><label for="lb_image">{$l('LBL_LB_IMAGE')}</label></td>
+                        <td scope="row"><label for="lb_image">{$imageLabel}</label></td>
                         <td>
                             <input type="file" id="lb_image" name="lb_image" accept="{$accept}">
-                            <span>{$l('LBL_LB_IMAGE_HELP')}</span>
+                            <span>{$help}</span>
                         </td>
                     </tr>
                 </table>
-                <input type="submit" class="button primary" name="lb_save" value="{$l('LBL_LB_SAVE')}">
+                <input type="submit" class="button primary" name="lb_save" value="{$saveLabel}">
                 {$remove}
             </form>
             HTML;
+    }
+
+    private static function escape(string $text): string
+    {
+        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    }
+
+    /** @param array<array-key, mixed> $labels */
+    private static function text(array $labels, string $key): string
+    {
+        return self::escape(self::label($labels, $key));
     }
 
     /** @param array<array-key, mixed> $labels */

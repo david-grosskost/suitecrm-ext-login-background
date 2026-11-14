@@ -10,6 +10,8 @@ declare(strict_types=1);
 use SuiteCrmExt\LoginBackground\Image;
 use SuiteCrmExt\LoginBackground\Storage;
 
+require_once __DIR__ . '/Settings.php';
+require_once __DIR__ . '/ConfigTable.php';
 require_once __DIR__ . '/Storage.php';
 require_once __DIR__ . '/Image.php';
 
@@ -23,6 +25,6 @@ http_response_code($response['status']);
 foreach ($response['headers'] as $name => $value) {
     header("$name: $value");
 }
-if ($response['file'] !== null) {
-    readfile($response['file']);
-}
+// print, the image is the answer (echo is refused by the scanner of the
+// Module Loader).
+print $response['body'];

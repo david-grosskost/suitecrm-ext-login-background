@@ -12,11 +12,14 @@ use SuiteCrmExt\LoginBackground\Page;
 use SuiteCrmExt\LoginBackground\PageView;
 use SuiteCrmExt\LoginBackground\Storage;
 
+require_once __DIR__ . '/Settings.php';
+require_once __DIR__ . '/ConfigTable.php';
 require_once __DIR__ . '/Storage.php';
 require_once __DIR__ . '/Upload.php';
 require_once __DIR__ . '/Page.php';
 // SuiteCRM's own view first (the current directory is public/legacy), then ours.
 require_once getcwd() . '/include/MVC/View/SugarView.php';
+require_once getcwd() . '/include/UploadFile.php';
 require_once __DIR__ . '/PageView.php';
 
 /** @var mixed $user */
@@ -31,9 +34,14 @@ $labels = $GLOBALS['mod_strings'] ?? [];
 $labels = is_array($labels) ? $labels : [];
 
 $storage = Storage::forSuiteCrm();
-$messages = $_SERVER['REQUEST_METHOD'] === 'POST'
-    ? Page::handle($_POST, $_FILES, $storage, static fn(string $path): bool => is_uploaded_file($path), $labels)
-    : [];
+$messages = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Read by SuiteCRM, which checks the file was just sent, its size and,
+    // for an image, that it holds no code; false when it refuses it.
+    $upload = new UploadFile('lb_image');
+    $data = isset($_POST['lb_save']) && $upload->confirm_upload() ? $upload->get_file_contents() : false;
+    $messages = Page::handle($_POST, $_FILES, is_string($data) ? $data : false, $storage, $labels);
+}
 
 $view = new PageView(Page::label($labels, 'LBL_LB_ADMIN_TITLE'), Page::html($storage->current(), $messages, $labels));
 $view->init();

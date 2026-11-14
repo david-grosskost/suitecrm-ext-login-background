@@ -7,64 +7,75 @@ namespace SuiteCrmExt\LoginBackground\Tests;
 use PHPUnit\Framework\TestCase;
 use SuiteCrmExt\LoginBackground\Storage;
 
-/** The image kept on the instance: one file, replaced or removed. */
 final class StorageTest extends TestCase
 {
-    private string $dir;
-
-    protected function setUp(): void
-    {
-        $this->dir = sys_get_temp_dir() . '/login-background-' . bin2hex(random_bytes(4));
-    }
-
-    protected function tearDown(): void
-    {
-        foreach (glob($this->dir . '/*') ?: [] as $file) {
-            unlink($file);
-        }
-        if (is_dir($this->dir)) {
-            rmdir($this->dir);
-        }
-    }
-
     public function testNoImageAtFirst(): void
     {
-        self::assertNull((new Storage($this->dir))->current());
-        self::assertFalse((new Storage($this->dir))->remove());
+        $storage = new Storage(new MemorySettings());
+
+        self::assertNull($storage->current());
+        self::assertFalse($storage->remove());
     }
 
     public function testTheImageSavedIsTheCurrentOne(): void
     {
-        $storage = new Storage($this->dir);
+        $storage = new Storage(new MemorySettings());
         $storage->save(Images::png(), 'image/png');
 
-        self::assertSame(['path' => $this->dir . '/background.png', 'type' => 'image/png'], $storage->current());
-        self::assertFileEquals(Images::png(), $this->dir . '/background.png');
+        $current = $storage->current();
+        self::assertNotNull($current);
+        self::assertSame('image/png', $current['type']);
+        self::assertSame(Images::png(), $current['data']);
+        self::assertSame(16, strlen($current['version']));
+    }
+
+    public function testABigImageIsCutInPartsThatFitTheConfigTable(): void
+    {
+        $settings = new MemorySettings();
+        $data = random_bytes(200 * 1024);
+        (new Storage($settings))->save($data, 'image/jpeg');
+
+        self::assertSame('5', $settings->values['parts'] ?? null);
+        foreach ($settings->values as $value) {
+            self::assertLessThanOrEqual(65535, strlen($value));
+        }
+        self::assertSame($data, (new Storage($settings))->current()['data'] ?? null);
     }
 
     public function testANewImageReplacesThePreviousOne(): void
     {
-        $storage = new Storage($this->dir);
+        $storage = new Storage(new MemorySettings());
         $storage->save(Images::png(), 'image/png');
+        $first = $storage->current()['version'] ?? '';
         $storage->save(Images::jpeg(), 'image/jpeg');
 
-        self::assertSame('image/jpeg', $storage->current()['type'] ?? null);
-        self::assertSame(['background.jpg'], array_map('basename', glob($this->dir . '/*') ?: []));
+        $current = $storage->current();
+        self::assertNotNull($current);
+        self::assertSame('image/jpeg', $current['type']);
+        self::assertNotSame($first, $current['version']);
     }
 
     public function testRemoveGivesTheUsualBackgroundBack(): void
     {
-        $storage = new Storage($this->dir);
+        $settings = new MemorySettings();
+        $storage = new Storage($settings);
         $storage->save(Images::png(), 'image/png');
 
         self::assertTrue($storage->remove());
         self::assertNull($storage->current());
+        self::assertSame([], $settings->values);
+    }
+
+    public function testDamagedSettingsShowNoImage(): void
+    {
+        self::assertNull((new Storage(new MemorySettings(['type' => 'image/png', 'parts' => '1', 'part_0000' => '%%%'])))->current());
+        self::assertNull((new Storage(new MemorySettings(['type' => 'image/gif', 'parts' => '1', 'part_0000' => 'AAAA'])))->current());
     }
 
     public function testAnotherTypeIsRefused(): void
     {
         $this->expectException(\InvalidArgumentException::class);
 
-        (new Storage($this->dir))->save(Images::png(), 'image/gif');
+        (new Storage(new MemorySettings()))->save(Images::png(), 'image/gif');
     }
 }

@@ -11,6 +11,9 @@ namespace SuiteCrmExt\LoginBackground;
  */
 final class PageView extends \SugarView
 {
+    /** The template, where SuiteCRM runs (public/legacy). */
+    public const string TEMPLATE = 'custom/include/login-background/page.tpl';
+
     public function __construct(private readonly string $title, private readonly string $body)
     {
         parent::__construct();
@@ -21,7 +24,10 @@ final class PageView extends \SugarView
         $administration = \translate('LBL_MODULE_NAME', 'Administration');
         $link = '<a href="index.php?module=Administration&amp;action=index">'
             . htmlspecialchars(is_string($administration) ? $administration : 'Administration', ENT_QUOTES, 'UTF-8') . '</a>';
-        echo \getClassicModuleTitle('Administration', [$link, htmlspecialchars($this->title, ENT_QUOTES, 'UTF-8')], false);
-        echo $this->body;
+        // Shown by the view's Smarty, as SuiteCRM's views do (echo is refused
+        // by the scanner of the Module Loader).
+        $this->ss->assign('LB_TITLE', \getClassicModuleTitle('Administration', [$link, htmlspecialchars($this->title, ENT_QUOTES, 'UTF-8')], false));
+        $this->ss->assign('LB_BODY', $this->body);
+        $this->ss->display(self::TEMPLATE);
     }
 }

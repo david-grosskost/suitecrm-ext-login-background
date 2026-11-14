@@ -5,41 +5,40 @@ declare(strict_types=1);
 namespace SuiteCrmExt\LoginBackground;
 
 /**
- * The answer of the entry point that serves the image (Serve.php): 404
- * without image, 304 when the browser already has this one, 200 with it
- * otherwise. The browser asks again each time (no-cache), so a new image
- * shows at the next visit of the login page.
+ * The answer of the loginBackground entry point (Serve.php): the image, or
+ * 404 without one, or 304 when the browser has it already. Never cached
+ * without asking (no-cache): a new image shows at once.
  */
 final class Image
 {
     /**
-     * @param array{path: string, type: string}|null $current
+     * @param array{type: string, version: string, data: string}|null $current
      *
-     * @return array{status: int, headers: array<string, string>, file: string|null}
+     * @return array{status: int, headers: array<string, string>, body: string}
      */
     public static function response(?array $current, ?string $ifNoneMatch): array
     {
-        if ($current === null || !is_file($current['path'])) {
-            return ['status' => 404, 'headers' => ['Cache-Control' => 'no-cache'], 'file' => null];
+        if ($current === null) {
+            return ['status' => 404, 'headers' => ['Cache-Control' => 'no-cache'], 'body' => ''];
         }
 
-        $etag = '"' . hash('sha256', (string) filemtime($current['path']) . '-' . (string) filesize($current['path'])) . '"';
+        $etag = '"' . $current['version'] . '"';
         $headers = [
             'Cache-Control' => 'no-cache',
             'ETag' => $etag,
             'X-Content-Type-Options' => 'nosniff',
         ];
         if ($ifNoneMatch !== null && trim($ifNoneMatch) === $etag) {
-            return ['status' => 304, 'headers' => $headers, 'file' => null];
+            return ['status' => 304, 'headers' => $headers, 'body' => ''];
         }
 
         return [
             'status' => 200,
             'headers' => $headers + [
                 'Content-Type' => $current['type'],
-                'Content-Length' => (string) filesize($current['path']),
+                'Content-Length' => (string) strlen($current['data']),
             ],
-            'file' => $current['path'],
+            'body' => $current['data'],
         ];
     }
 }

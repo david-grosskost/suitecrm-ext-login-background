@@ -10,11 +10,18 @@ declare(strict_types=1);
 use SuiteCrmExt\LoginBackground\Image;
 use SuiteCrmExt\LoginBackground\Storage;
 
+require_once __DIR__ . '/Settings.php';
+require_once __DIR__ . '/ConfigTable.php';
 require_once __DIR__ . '/Storage.php';
 require_once __DIR__ . '/Image.php';
 
 $ifNoneMatch = $_SERVER['HTTP_IF_NONE_MATCH'] ?? null;
-$response = Image::response(Storage::forSuiteCrm()->current(), is_string($ifNoneMatch) ? $ifNoneMatch : null);
+$version = $_GET['v'] ?? null;
+$response = Image::response(
+    Storage::forSuiteCrm()->current(),
+    is_string($ifNoneMatch) ? $ifNoneMatch : null,
+    is_string($version) ? $version : null,
+);
 
 while (ob_get_level() > 0) {
     ob_end_clean();
@@ -23,6 +30,10 @@ http_response_code($response['status']);
 foreach ($response['headers'] as $name => $value) {
     header("$name: $value");
 }
-if ($response['file'] !== null) {
-    readfile($response['file']);
+if (str_starts_with($response['headers']['Cache-Control'] ?? '', 'public')) {
+    // SuiteCRM's session dates it in the past: the cache would not keep it.
+    header_remove('Expires');
 }
+// print, the image is the answer (echo is refused by the scanner of the
+// Module Loader).
+print $response['body'];

@@ -6,8 +6,40 @@
 // the seed runner of suitecrm-core (database/seeders/src).
 
 namespace {
+    class Sugar_Smarty
+    {
+        public function assign(string $name, mixed $value): void
+        {
+        }
+
+        public function display(?string $template = null): void
+        {
+        }
+    }
+
+    /** SuiteCRM's file upload (include/UploadFile.php). */
+    class UploadFile
+    {
+        public function __construct(string $field_name = '')
+        {
+        }
+
+        /** Checks the file was just sent, its size, and that an image holds no code. */
+        public function confirm_upload(): bool
+        {
+        }
+
+        /** @return string|false */
+        public function get_file_contents()
+        {
+        }
+    }
+
     class SugarView
     {
+        /** @var Sugar_Smarty Set by init() */
+        public $ss;
+
         /** @param array<mixed> $view_object_map */
         public function __construct(?SugarBean $bean = null, array $view_object_map = [])
         {

@@ -5,78 +5,85 @@ declare(strict_types=1);
 namespace SuiteCrmExt\LoginBackground;
 
 /**
- * The image chosen in the administration: one file, background.<jpg|png|webp>,
- * in upload/login-background/ of the instance (persistent volume, in the
- * nightly backup; the upload folder is not served by the web server, the
- * entry point serves it).
+ * The background image, kept in the settings (base64, cut in parts that fit
+ * the value column of the config table, a text of 64 KB). One image at most:
+ * a new one replaces it.
  */
 final class Storage
 {
-    /** Accepted types and the extension of the file kept. */
+    /** Image types accepted, and their extension. */
     public const array TYPES = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
 
+    /** Heaviest image accepted: 5 MB, enough for a full-screen photo. */
     public const int MAX_BYTES = 5 * 1024 * 1024;
 
-    private const string NAME = 'background';
+    /** Base64 characters per part. */
+    private const int PART = 60000;
 
-    public function __construct(private readonly string $dir) {}
+    public function __construct(private readonly Settings $settings) {}
 
-    /** In SuiteCRM: the upload folder of its configuration, from public/legacy. */
     public static function forSuiteCrm(): self
     {
-        /** @var mixed $config */
-        $config = $GLOBALS['sugar_config'] ?? [];
-        $upload = is_array($config) && is_string($config['upload_dir'] ?? null) ? $config['upload_dir'] : 'upload/';
-        if (!str_starts_with($upload, '/')) {
-            $upload = (getcwd() ?: '.') . '/' . $upload;
-        }
-
-        return new self(rtrim($upload, '/') . '/login-background');
+        return new self(ConfigTable::forSuiteCrm());
     }
 
-    /** @return array{path: string, type: string}|null The image kept, if any */
+    /**
+     * The image there is, or null: its type, a version that changes with the
+     * image (its digest), and its content.
+     *
+     * @return array{type: string, version: string, data: string}|null
+     */
     public function current(): ?array
     {
-        foreach (self::TYPES as $type => $extension) {
-            $path = $this->path($extension);
-            if (is_file($path)) {
-                return ['path' => $path, 'type' => $type];
-            }
+        $values = $this->settings->read();
+        $type = $values['type'] ?? '';
+        $count = (int) ($values['parts'] ?? '0');
+        if (!isset(self::TYPES[$type]) || $count < 1) {
+            return null;
         }
 
-        return null;
+        $encoded = '';
+        for ($part = 0; $part < $count; ++$part) {
+            $encoded .= $values[self::part($part)] ?? '';
+        }
+        $data = base64_decode($encoded, true);
+        if ($data === false || $data === '') {
+            return null;
+        }
+
+        return ['type' => $type, 'version' => $values['version'] ?? '', 'data' => $data];
     }
 
-    /** Keeps $file as the image, in place of the previous one. */
-    public function save(string $file, string $type): void
+    public function save(string $data, string $type): void
     {
-        $extension = self::TYPES[$type] ?? throw new \InvalidArgumentException("Type d'image refusé : $type");
-        if (!is_dir($this->dir) && !mkdir($this->dir, 0o775, true) && !is_dir($this->dir)) {
-            throw new \RuntimeException("Dossier impossible à créer : {$this->dir}");
+        if (!isset(self::TYPES[$type])) {
+            throw new \InvalidArgumentException("Type d'image refusé : $type");
         }
-        $target = $this->path($extension);
-        $temporary = $target . '.new';
-        if (!copy($file, $temporary) || !rename($temporary, $target)) {
-            @unlink($temporary);
-            throw new \RuntimeException("Image impossible à enregistrer : $target");
+
+        $parts = str_split(base64_encode($data), self::PART);
+        $values = [
+            'type' => $type,
+            'version' => substr(hash('sha256', $data), 0, 16),
+            'parts' => (string) count($parts),
+        ];
+        foreach ($parts as $index => $part) {
+            $values[self::part($index)] = $part;
         }
-        foreach (self::TYPES as $other) {
-            if ($other !== $extension) {
-                @unlink($this->path($other));
-            }
-        }
+        $this->settings->replace($values);
     }
 
-    /** Removes the image: the login page gets its own background back. */
     public function remove(): bool
     {
-        $current = $this->current();
+        if ($this->settings->read() === []) {
+            return false;
+        }
+        $this->settings->replace([]);
 
-        return $current !== null && unlink($current['path']);
+        return true;
     }
 
-    private function path(string $extension): string
+    private static function part(int $index): string
     {
-        return $this->dir . '/' . self::NAME . '.' . $extension;
+        return sprintf('part_%04d', $index);
     }
 }

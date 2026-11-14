@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace SuiteCrmExt\LoginBackground;
 
 /**
- * Checks the file sent by the admin form ($_FILES entry): an image JPEG, PNG
- * or WebP of at most 5 MB, recognised by its content, not by its name.
+ * The file sent by the admin form: the upload error PHP gives, then its
+ * content (read by SuiteCRM's UploadFile, which also checks it was just
+ * sent): an image of an accepted type, judged by its bytes, not its name.
  */
 final class Upload
 {
     /**
-     * @return array{type: string}|array{error: string} The image type, or the label of what is wrong
+     * @param mixed $file The entry of $_FILES
+     * @param string|false $data Its content, false when SuiteCRM refused it
+     *
+     * @return array{type: string}|array{error: string} The type, or the label of the error
      */
-    public static function check(mixed $file): array
+    public static function check(mixed $file, string|false $data): array
     {
         if (!is_array($file) || !is_int($file['error'] ?? null)) {
             return ['error' => 'LBL_LB_NO_FILE'];
@@ -28,17 +32,15 @@ final class Upload
         if ($error !== null) {
             return ['error' => $error];
         }
-
-        $path = $file['tmp_name'] ?? null;
-        if (!is_string($path) || !is_file($path)) {
+        if ($data === false || $data === '') {
             return ['error' => 'LBL_LB_UPLOAD_FAILED'];
         }
-        if (filesize($path) > Storage::MAX_BYTES) {
+        if (strlen($data) > Storage::MAX_BYTES) {
             return ['error' => 'LBL_LB_TOO_BIG'];
         }
 
-        $type = (new \finfo(FILEINFO_MIME_TYPE))->file($path);
-        if (!is_string($type) || !isset(Storage::TYPES[$type]) || @getimagesize($path) === false) {
+        $type = (new \finfo(FILEINFO_MIME_TYPE))->buffer($data);
+        if (!is_string($type) || !isset(Storage::TYPES[$type]) || @getimagesizefromstring($data) === false) {
             return ['error' => 'LBL_LB_BAD_TYPE'];
         }
 

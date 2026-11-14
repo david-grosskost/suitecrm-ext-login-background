@@ -22,6 +22,9 @@ habituel. Réservé aux administrateurs.
 - Un point d'entrée de SuiteCRM, ouvert sans connexion puisque la page de connexion
   l'affiche avant, sert **seulement** cette image :
   `legacy/index.php?entryPoint=loginBackground` (« introuvable » s'il n'y en a pas).
+  Cette adresse renvoie vers celle de l'image en place (`…&v=<version>`), gardée un an
+  en cache par le navigateur : l'image n'est téléchargée qu'une fois, et une nouvelle
+  image a une nouvelle adresse.
 - L'extension passe le scanner du Chargeur de module : aucune fonction de fichier,
   aucun `echo` (la page passe par Smarty, l'image par `print`).
 - Un **module Angular**, que SuiteCRM 8 charge au démarrage sans recompiler son front,

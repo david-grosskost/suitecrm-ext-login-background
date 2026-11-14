@@ -16,7 +16,7 @@ jobs:
       # Unused (no image), but asked by the devkit's image job: GitHub refuses
       # a called workflow that asks for more than its caller grants.
       packages: write
-    uses: david-grosskost/suitecrm-devkit/.github/workflows/release.yml@v0.25.0
+    uses: david-grosskost/suitecrm-devkit/.github/workflows/release.yml@v0.26.0
     with:
       dockerfile: ""
     secrets: inherit

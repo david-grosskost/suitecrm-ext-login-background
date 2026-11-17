@@ -1,8 +1,8 @@
 # Extension SuiteCRM
 
 Ce dépôt est **une extension SuiteCRM 8** des projets de David Grosskost : un paquet Composer
-(`suitecrm-extension`) que l'image de suitecrm-core (ou d'un projet client) installe, puis
-que chaque instance active ou non (variable `EXTENSIONS`).
+(`suitecrm-extension`) que l'image de suitecrm-core (ou d'un projet client) met à
+disposition, et que chaque instance installe ou non depuis le Chargeur de module.
 
 ## Avec qui tu travailles
 

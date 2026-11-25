@@ -4,8 +4,8 @@
 // Angular module to SuiteCRM 8, which loads it when the interface starts
 // (module federation). The module (public/, built from app/ by make
 // front@build) is under extensions/LoginBackground/ in SuiteCRM: the slug
-// in PascalCase. Enabled: the extension's files are there only when it is active
-// (EXTENSIONS of the instance).
+// in PascalCase. Enabled: the extension's files are there only when it is
+// installed (Module Loader).
 
 declare(strict_types=1);
 
